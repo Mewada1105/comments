@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comment System</title>
+<link rel="stylesheet" href="styles.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+  // Load comments from localStorage if any
+  loadComments();
+
+  // Add comment event
+  $('#addComment').on('click', function() {
+    var commentText = $('#commentText').val();
+    if (commentText.trim() === '') {
+      alert('Please enter a comment.');
+      return;
+    }
+    var currentDate = new Date();
+    var timestamp = currentDate.toLocaleString();
+    var comment = {
+      text: commentText,
+      timestamp: timestamp,
+      replies: []
+    };
+    addComment(comment);
+    saveComments();
+    $('#commentText').val(''); // Clear the textarea
+  });
+
+  // Reply event
+  $(document).on('click', '.reply-link', function() {
+    var commentIndex = $(this).data('comment-index');
+    var replyText = prompt('Enter your reply:');
+    if (replyText !== null && replyText.trim() !== '') {
+      var currentDate = new Date();
+      var timestamp = currentDate.toLocaleString();
+      var reply = {
+        text: replyText,
+        timestamp: timestamp
+      };
+      addReply(commentIndex, reply);
+      saveComments();
+    }
+  });
+
+  // Delete comment event (Only for admin)
+  $(document).on('click', '.delete-comment', function() {
+    if (confirm('Are you sure you want to delete this comment?')) {
+      var commentIndex = $(this).data('comment-index');
+      deleteComment(commentIndex);
+      saveComments();
+    }
+  });
+
+  function addComment(comment) {
+    var commentHtml = '<div class="comment"><p>' + comment.text + '</p><small>' + comment.timestamp + '</small>';
+    commentHtml += '<a href="#" class="reply-link" data-comment-index="' + ($('#comments .comment').length) + '">Reply</a>';
+    commentHtml += '<a href="#" class="delete-comment" data-comment-index="' + ($('#comments .comment').length) + '">Delete</a>';
+    commentHtml += '</div>';
+    $('#comments').append(commentHtml);
+  }
+
+  function addReply(commentIndex, reply) {
+    var replyHtml = '<div class="reply"><p>' + reply.text + '</p><small>' + reply.timestamp + '</small></div>';
+    $('#comments .comment').eq(commentIndex).append(replyHtml);
+  }
+
+  function deleteComment(commentIndex) {
+    $('#comments .comment').eq(commentIndex).remove();
+  }
+
+  function saveComments() {
+    var comments = [];
+    $('#comments .comment').each(function() {
+      var commentText = $(this).find('p').text();
+      var timestamp = $(this).find('small').text();
+      var replies = [];
+      $(this).find('.reply').each(function() {
+        var replyText = $(this).find('p').text();
+        var replyTimestamp = $(this).find('small').text();
+        replies.push({
+          text: replyText,
+          timestamp: replyTimestamp
+        });
+      });
+      comments.push({
+        text: commentText,
+        timestamp: timestamp,
+        replies: replies
+      });
+    });
+    localStorage.setItem('comments', JSON.stringify(comments));
+  }
+
+  function loadComments() {
+    var comments = JSON.parse(localStorage.getItem('comments'));
+    if (comments) {
+      comments.forEach(function(comment) {
+        addComment(comment);
+        comment.replies.forEach(function(reply) {
+          addReply($('#comments .comment').length - 1, reply);
+        });
+      });
+    }
+  }
+});
+
+</script>
+</head>
+<body>
+
+<div class="container">
+  <h1>Comments</h1>
+  <div id="comments"></div>
+  <div class="comment-box">
+    <textarea id="commentText" placeholder="Write a comment"></textarea>
+    <button id="addComment">Add</button>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
